@@ -1,0 +1,110 @@
+---
+title: "Homework4"
+output: html_document
+---
+
+1) W&S Chapter 6 questions 15, 21, and 29
+
+2) W&S Chapter question 22 - use R to calculate a p-value
+
+3) From lab, many alphas, many sds
+```{r}
+
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+set.seed(80)
+
+null_m <- 80
+m <- 80 + 5
+
+
+# create data frame with sample sizes
+sim_data <- data.frame(samp_size = rep(1:20, 500))
+
+# also look at multiple SD sizes (vector of sd values from 3 to 10, iterate by 1)
+many_sds <- seq(3, 10, 1)
+
+# crossing initial data frame of sample sizes and vector of sd values
+cross_df <- sim_data %>%
+  crossing(sd = many_sds)
+
+# get a sample mean for all sample sizes and sds
+cross_df <- cross_df %>%
+  
+  #group by 1:n() means you dont need sim numbers  #group by row, as each is 1 sim
+  group_by(sims = 1:n()) %>%
+  
+  #get sample means
+  mutate(samp_mean = mean(rnorm(samp_size, m, sd))) %>%
+  
+  ungroup()
+
+
+###calculate results from z-tests
+cross_df <- cross_df %>%
+  #pop SE = sd/sqrt(samp_size)
+  mutate(se_y = sd/sqrt(samp_size)) %>%
+  #calculate z
+  mutate(z = (samp_mean-80)/se_y) %>%
+  #get p values
+  mutate(p = 2*pnorm(abs(z), mean=0, sd=1, lower.tail = FALSE))
+
+
+###plot p by sample size, using facet_wrap for different SD values
+ggplot(cross_df, mapping = aes(x=samp_size, y=p)) +
+  geom_jitter(alpha = 0.4) +
+  facet_wrap(~sd)
+
+
+###calculate power
+power_cross_df <- cross_df %>%
+  #group for each sample size and sd
+  group_by(samp_size, sd) %>%
+  #calc type 2 error rate
+  summarise(error_rate = sum(p>0.05)/n()) %>%
+  ungroup %>%
+  mutate(power = 1 - error_rate)
+
+###plot power using color for different SD values. include threshold power of 0.8
+ggplot(power_cross_df, mapping = aes(x=samp_size, y=power, color=factor(sd))) +
+  geom_point() + 
+  geom_line() +
+  geom_hline(yintercept = 0.8)
+
+###last, use crossing again to explore changing alphas from 0.01 to 0.1. 
+alpha <- seq(0.01, 0.1, 0.01)
+
+alpha_cross_df <- cross_df %>%
+  crossing(alpha = alpha) %>%
+  #for each samp size, sd, and alpha
+  group_by(samp_size, sd, alpha) %>%
+  #calctype 2 error rate
+  summarise(error_rate = sum(p>alpha)/n()) %>%
+  ungroup() %>%
+  #calc power
+  mutate(power=1-error_rate)
+  
+###Plot power curves with different alphas as different colors, and use faceting to look at different SDs.
+
+ggplot(alpha_cross_df, mapping = aes(x=samp_size, y=power, color=factor(alpha))) +
+  geom_point() +
+  geom_line() +
+  geom_hline(yintercept = 0.8) +
+  facet_wrap(~sd)
+
+
+##What do you learn about how alpha and SD affect power?
+   # higher alpha, means higher power
+   # higher SD, lower power
+   # high alpha and low SD give highest power
+
+
+## increasing effect size may increase power as it gets increasingly more than the standard deviation
+## increasing effect size may also help to further differentiate the sample from the null distribution?
+
+
+
+
+```
+
