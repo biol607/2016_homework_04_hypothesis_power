@@ -5,7 +5,25 @@ output: html_document
 
 1) W&S Chapter 6 questions 15, 21, and 29
 
+### 15
+a. There is no difference in mean femus lengths between pygmy mammoths and continental mammoths.
+b. Patients who take phentermine and topiramate do not lose weight at a different rate than control patients without these drugs.
+c.There is no difference in the proportion of babies born with cleft palates between patients who take phentermine and topiramate and patients not taking those drugs.
+d.There is no difference in the average amounts of candy bought by shoppers when Christams music is playing compared to wen the usual type of music is playing.
+e.There is no difference in how often males white-collared manakins dance when females are present than when they are absent. 
+
+### 21
+a.The 60-participant study has a higher probability of a Type II error.
+b.The 100-participant study has a higher power.
+c.The studies have the same alpha level therefore the probability of a Type I error is the same for both. 
+d.This test should be two tailed becaue the null hypothesis does not specify a direction (higher or lower).
+
+### 29
+a. 0.95?
+b. 5
+
 2) W&S Chapter question 22 - use R to calculate a p-value
+
 
 3) From lab, many alphas, many sds
 ```{r}
