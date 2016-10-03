@@ -1,0 +1,142 @@
+---
+title: "LaBella_04"
+author: "Rachel LaBella"
+date: "October 2, 2016"
+output: html_document
+---
+
+####Book Questions
+#####Chapter 6 
+1 - 
+15.
+a) Pygmy mammoths and continental mammoths have the same femur length.
+b) Patients taking phentermine and topiramate lose weight at the same rate as the control patients without the drugs.
+c) Patients taking phentermine and topiramate have the same rate of babies born with cleft palats than the patients not taking the drugs.
+d) There is no difference in candy consumption when Christmas music is playing or normal music is playing.
+e) Male white-collared manakins dance the same amount when a female is present or absent. 
+
+21. 
+a) There will be a higher chance of getting a type-II error if your sample size is 60. The larger the sample size, the more power the study has. There is a higher chance of rejecting the null if there is greater power.
+b) The 100 participant study has a higher power. 
+c) Both of the tests have an equal probability of obtaining a type-I error. The only way to decrease the chance of a type-I error is to lower the alpha to something below 0.05. Doing so just increases your chance of getting a type-II error though. 
+d) I think that it should be a two-tailed test. You are testing whether COX-2 selective inhibitors have an effect on cardiac arrest or do not. 
+
+29.
+a)
+b)
+
+####Chapter 7
+22. 
+
+
+```{r, echo = TRUE}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+```
+
+####3 - Here’s the exercise we started in lab. Feel free to look back copiously at the lab handout if you’re getting stuck. Remember, for each step, write-out in comments what you want to do, and then follow behing with code.
+Now, let’s assume an average population-wide resting heart rate of 80 beats per minute with a standard deviation of 6 BPM.
+A given drug speeds people’s heart rates up on average by 5 BPM. What sample size do we need to achieve a power of 0.8?
+
+####3.1) Start up your simulation
+
+Make a simulated data frame to look at the effects of multiple sample sizes: from 1-20, with 500 simulations per sample size, and also multiple SD values, from 3 through 10 (just 3:10, no need for non-integer values). You’re going to want crossing with your intitial data frame of just sample sizes and a vector of sd values to start. Then generate samples from the appropriate random normal distribution.
+``` {r, echo = TRUE}
+
+# set a mean and pop SD
+m <- 80 + 5
+sd_pop <- 3:10
+
+sample_df <- data.frame(samp_size = rep(1:20, 500)) 
+
+sd_vector <- c(3:10)
+
+cross_df <- sample_df %>%
+  crossing(sd_vector = sd_vector) %>%
+  group_by(samp_size, sd_vector) %>%
+  ungroup()
+
+sim_cross_df <- cross_df %>%
+  group_by(1:n()) %>%
+  mutate(sample_mean = mean(rnorm(samp_size, m, sd_vector))) %>%
+  ungroup()
+
+ggplot(data=sim_cross_df, mapping = aes(samp_size, sample_mean)) +
+  geom_jitter(alpha = 0.4, size = 3)
+
+```
+
+####3.2) Z!
+
+OK, now that you’ve done that, calculate the results from z-tests. Plot p by sample size, using facet_wrap for different SD values.
+
+``` {r, echo = TRUE}
+
+z_data <- sim_cross_df %>%
+  mutate(se_y = (sd_vector)/sqrt(samp_size)) %>%
+  mutate(z = (sample_mean-80)/se_y) %>%
+  mutate(p = pnorm(abs(z), lower.tail=FALSE))
+
+ggplot(data=z_data, mapping = aes(samp_size, p)) +
+  facet_wrap(~sd_vector) +
+  geom_jitter() 
+
+```
+
+
+####3.3) P and Power
+
+Now plot power for an alpha of 0.05, but use color for different SD values. Include our threshold power of 0.8.
+
+``` {r, echo = TRUE}
+power_df <- z_data %>%
+  group_by(samp_size, sd_vector) %>%
+  summarize(error_rate = sum(p>0.08)/n()) %>%
+  ungroup() %>%
+  mutate(power = 1 - error_rate)
+
+ggplot(data = power_df, mapping = aes(samp_size, power, group = sd_vector, color = sd_vector)) +
+  geom_point() +
+  geom_line() + 
+  geom_hline(yintercept = 0.8, linetype = 2, color = "red")
+
+
+```
+
+
+####3.4) Many alphas
+
+Last, use crossing again to explore changing alphas from 0.01 to 0.1. Plot power curves with different alphas as different colors, and use faceting to look at different SDs.
+
+``` {r, echo = TRUE}
+
+alpha <- seq(0.01, 0.1, .01)
+alpha_df <- z_data %>%
+  crossing(alpha = alpha) %>%
+  group_by(samp_size, alpha, sd_vector) %>%
+  summarize(error_rate = sum(p>alpha)/n()) %>%
+  ungroup() %>%
+  mutate(power = 1 - error_rate)
+
+ggplot(alpha_df, mapping = aes(samp_size, power, color = factor(alpha))) +
+  facet_wrap(~sd_vector) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept = 0.8, linetype = 2, color = "red")
+  
+```
+
+
+####3.5) What does it all mean? What do you learn about how alpha and SD affect power?
+
+####3.6) How do you think that changing the effect size would affect power?
+
+
+
+
+
+
+
+
+
