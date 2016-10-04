@@ -43,7 +43,9 @@ output: html_document
 * On average, 5 tests are expected to reject the null hypothesis.
 
 ### 2) W&S Chapter 7 question 22 - use R to calculate a p-value
+
 #### 22. In a test of Murphy's law, pieces of toast were buttered on one side and then dropped. Murphy's law predicts that they will land butter-side down. Out of 9821 slices of toast dropped, 6101 landed butter-side down. (Believe it or not, these are real data!)
+
 ##### a. What is a 95% confidence interval for the probability of a piece of toast landing butter-side down?
 ```{r 22.a}
 X <- 6101
@@ -54,13 +56,20 @@ p_1 <- (X + 2)/(n + 4)
 lower_CI <- p_1 - 1.96 * sqrt(p_1 * (1 - p_1)/(n + 4))
 upper_CI <- p_1 + 1.96 * sqrt(p_1 * (1 - p_1)/(n + 4))
 lower_CI; upper_CI
+
 ```
 
 * The 95% confidence interval is 0.612 < p < 0.631.
 
 ##### b. Using the results of part (a), is it plausible that there is a 50:50 chance of the toast landing butter-side down or butter-side up?
 
-* It is not plausible that there is a 50:50 chance of the toast landing butter-side down, because the 95% confidence interval doesn't inculde 0.5. 
+```{r 22.b}
+# calculate the P value
+p_toast <- 2* pbinom(q = 6101, size = 9821, prob = 0.5, lower.tail = FALSE)
+p_toast
+```
+
+* The p value is 6.414273e-129, which is way less than 0.05. So the null hypothesis should be rejected. It is not plausible that there is a 50:50 chance of the toast landing butter-side down or butter-side up.
 
 ### 3) From the Lab: Many SDs and Alphas
 ```{r library}
