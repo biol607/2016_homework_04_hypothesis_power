@@ -1,0 +1,212 @@
+---
+title: "Han_04"
+author: "Wanting Han"
+date: "10/2/2016"
+output: html_document
+---
+### 1) W&S Chapter 6 questions 15, 21, and 29
+#### 15. For the following alternative hypotheses, give the appropriate null hypothesis.
+##### a. Pygmy mammoths and continental mammoths differ in their mean femur lengths.
+* Pygmy mammoths has the same mean femur lengths as continental mammoths.
+
+##### b. Patients who take phentermine and topiramate lose weight at a different rate than control patients without these drugs.
+* Patients who take phentermine has the same lose weight rate as patients who take the topiramate.
+
+##### c. Patients who take phentermine and topiramate have different proportions of their babies born with cleft palates than do patients not taking these drugs.
+* The proportions of babies of patients who take phentermine and topiramate are the same as these patients who don't take these drugs.
+
+##### d. Shoppers on average buy different amounts of candy when Christmas music is playing in the shop compared to when the usual type of music is playing.
+* Shoppers on average buy the same amounts of candy when Christmas music is playing in the shop compared to when the usual type of music is playing.
+
+##### e. Male white-collared manakins (a tropical bird) dance more often when females are present than when they are absent.
+* When females are present, male white-collared manakins dance as often as when females are absent.
+
+#### 21. Imagine that two researchers independently carry out clinical trials to test the same null hypothesis, that COX-2 selective inhibitors (which are used to treat arthritis) have no effect on the risk of cardiac arrest. They use the same population for their study, but one experimenter uses a sample size of 60 participants, whereas the other uses a sample size of 100. Assume that all other aspects of the studies, including significance levels, are the same between the two studies.
+
+##### a. Which study has the higher probability of a Type II error, the 60-participant study or the 100-participant study?
+* The 60-participant study has higher probability of a Type II error.
+
+##### b. Which study has higher power?
+* The 100-participant study has higher power.
+
+##### c. Which study has the higher probability of a Type I error?
+* These have the same probability of a Iype I error.
+
+##### d. Should the tests be one-tailed or two-tailed? Explain.
+* The tests should be one-tailed test, because the purpose of COX-2 selective inhibitors are reducing the risk of cardiac arrest.
+
+#### 29. A team of researchers conducted 100 independent hypothesis tests using a significance level of α = 0.05.
+##### a. If all 100 null hypotheses were true, what is the probability that the researchers would reject none of them?
+* There have 0.6% chance that the researchers would reject none of them.
+
+##### b. If all 100 null hypotheses were true, how many of these tests on average are expected to reject the null hypothesis?
+* On average, 5 tests are expected to reject the null hypothesis.
+
+### 2) W&S Chapter 7 question 22 - use R to calculate a p-value
+#### 22. In a test of Murphy's law, pieces of toast were buttered on one side and then dropped. Murphy's law predicts that they will land butter-side down. Out of 9821 slices of toast dropped, 6101 landed butter-side down. (Believe it or not, these are real data!)
+##### a. What is a 95% confidence interval for the probability of a piece of toast landing butter-side down?
+```{r 22.a}
+X <- 6101
+n <- 9821
+p <- X/n
+se <- sqrt(p*(1-p)/n)
+p_1 <- (X + 2)/(n + 4)
+lower_CI <- p_1 - 1.96 * sqrt(p_1 * (1 - p_1)/(n + 4))
+upper_CI <- p_1 + 1.96 * sqrt(p_1 * (1 - p_1)/(n + 4))
+lower_CI; upper_CI
+```
+
+* The 95% confidence interval is 0.612 < p < 0.631.
+
+##### b. Using the results of part (a), is it plausible that there is a 50:50 chance of the toast landing butter-side down or butter-side up?
+
+* It is not plausible that there is a 50:50 chance of the toast landing butter-side down, because the 95% confidence interval doesn't inculde 0.5. 
+
+### 3) From the Lab: Many SDs and Alphas
+```{r library}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+#### Now, let’s assume an average population-wide resting heart rate of 80 beats per minute with a standard deviation of 6 BPM. A given drug speeds people’s heart rates up on average by 5 BPM. What sample size do we need to achieve a power of 0.8?
+
+``` {r set up}
+# set mean and polulation sd
+null_m <- 80
+m <- 80 + 5
+sd <- 6
+
+# creat a data frame: sample sizes from 1 to 20, 500 simulations
+samp_df <- data.frame(samp_size = rep(1:20, 500))
+
+# add simulations
+sim_df <- samp_df %>%
+  # group by simulation
+  group_by(sims = 1:n()) %>%
+  # calculate the sample mean
+  mutate(samp_mean = mean(rnorm(samp_size, mean = m, sd = sd))) %>%
+  ungroup()
+
+# calculate p values
+p_df <- sim_df %>%
+  # calculate sample SE
+  mutate(se_y = sd/sqrt(samp_size)) %>%
+  # calculate Z
+  mutate(z = (samp_mean - null_m)/se_y) %>%
+  # calculate p values
+  mutate(p = 2*pnorm(abs(z), mean = 0, sd = 1, lower.tail = FALSE))
+
+# calculate power
+power_df <- p_df %>%
+  # for each sample size
+  group_by(samp_size) %>%
+  # calculate type 2 error rate
+  summarize(error_rate = sum(p > 0.05)/n()) %>%
+  ungroup() %>%
+  # calculate power
+  mutate(power = 1 - error_rate)
+
+# select the power is equal or more than 0.8
+power_df[power_df$power >= 0.8, ]
+```
+
+* We need sample size 12 to achieve a power of 0.8. 
+
+##### 3.1) Start up your simulation
+
+**Make a simulated data frame to look at the effects of multiple sample sizes: from 1-20, with 500 simulations per sample size, and also multiple SD values, from 3 through 10 (just 3:10, no need for non-integer values). You’re going to want crossing with your intitial data frame of just sample sizes and a vector of sd values to start. Then generate samples from the appropriate random normal distribution.**
+
+```{r data frame}
+# data frame about sample sizes from 1 to 20
+size_df <- data.frame(samp_size = rep(1:20, 500))
+
+# add multiple SD values into data frame
+sd_mul <- 3:10
+sd_df <- size_df %>%
+  crossing(sd_mul)
+
+# add simulations
+sd_sim_df <- sd_df %>%
+  # group by simulation
+  group_by(sims = 1:n()) %>%
+  # calculate the sample mean
+  mutate(samp_mean = mean(rnorm(samp_size, mean = m, sd = sd_mul))) %>%
+  ungroup()
+```
+
+##### 3.2) Z!
+
+**OK, now that you’ve done that, calculate the results from z-tests. Plot p by sample size, using facet_wrap for different SD values.**
+
+```{r p values, cash = TRUE}
+# calculate p values
+p_val_df <- sd_sim_df %>%
+  # calculate sample SE
+  mutate(se_y = sd_mul/sqrt(samp_size)) %>%
+  # calculate z
+  mutate(z = (samp_mean - null_m)/se_y) %>%
+  # calculate p values
+  mutate(p = 2*pnorm(abs(z), mean = 0, sd = 1, lower.tail = FALSE))
+
+# plot p by sample size, wrap by SD values
+ggplot(data = p_val_df, mapping = aes(x = samp_size, y = p)) +
+  geom_jitter(alpha = 0.4) +
+  facet_wrap(~sd_mul) +
+  xlab("Sample Size")
+```
+
+##### 3.3) P and Power
+
+**Now plot power for an alpha of 0.05, but use color for different SD values. Include our threshold power of 0.8.**
+
+```{r power, cash = TRUE}
+power_sd_df <- p_val_df %>%
+  # for each sample size and each sd
+  group_by(samp_size, sd_mul) %>%
+  # calculate type 2 error rate
+  mutate(error_rate = sum(p>0.05)/n()) %>%
+  ungroup() %>%
+  #calculate power
+  mutate(power = 1 - error_rate)
+
+# plot sample size by power
+ggplot(data = power_sd_df, mapping = aes(x = samp_size, y = power, color = factor(sd_mul))) +
+  geom_line() + geom_point() +
+  geom_hline(yintercept = 0.8, lty = 2) +
+  xlab("Sample Size") +
+  scale_color_discrete(guide = guide_legend(title = "Standard Deviation"))
+  
+```
+
+##### 3.4) Many alphas
+
+**Last, use crossing again to explore changing alphas from 0.01 to 0.1. Plot power curves with different alphas as different colors, and use faceting to look at different SDs.**
+
+```{r alpha, cash = TRUE}
+alpha <- seq(0.01, 0.1, .01)
+alpha_df <- p_val_df %>%
+  # crossing alpha
+  crossing(alpha = alpha) %>%
+  # group by sample size, alpha and sd
+  group_by(samp_size, alpha, sd_mul) %>%
+  # calculate type 2 error rate
+  summarise(error_rate = sum(p>alpha)/n()) %>%
+  ungroup() %>%
+  # calsulate power
+  mutate(power = 1 - error_rate)
+
+ggplot(data = alpha_df, mapping = aes(x = samp_size, y = power, color = factor(alpha))) +
+  geom_point() + geom_line() +
+  facet_wrap(~sd_mul) +
+  xlab("Sample Size") +
+  scale_color_discrete(guide = guide_legend(title = expression(alpha)))
+```
+
+**3.5) What does it all mean? What do you learn about how alpha and SD affect power?**
+
+* The higher alpha means lesser power; higher SD means higher power.
+
+**3.6) How do you think that changing the effect size would affect power?**
+
+*  When the sample size is bigger, the power is stronger.
