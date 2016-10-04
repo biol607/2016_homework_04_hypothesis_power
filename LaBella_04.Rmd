@@ -31,7 +31,7 @@ a)
 ```{r, echo = TRUE}
 library(binom)
 binom.confint(6101, 9821, conf.level = 0.95, methods = "exact")
-pbinom(6101, 9821, prob = 0.5, lower.tail = TRUE)
+pbinom(6101, 9821, prob = 0.5, lower.tail = FALSE)
 ```
 b) The 95% confidence interval states that 95% of the time the mean will lie within 0.61 and 0.63 probabiities. It is plausable that the buttered toast will have a 50/50 chance, but it lies outside the confidence interval. 
 
