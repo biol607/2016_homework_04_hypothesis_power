@@ -1,0 +1,179 @@
+---
+title: 'Homework #4'
+author: "Jessica Karch"
+date: "October 3, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+**1) W&S Chapter 6 questions 15, 21, and 29**  
+**15.** For the following alternative hypothese, give the appropriate null hypothesis.  
+**15a.** Pygmy mammoths and continental mammoths do not differ in their mean femur lengths.  
+**15b.** Patients who take phentermine and topiramate lose weight at the same rate as control patients without those drugs.  
+**15c.** Patients who take pentermine and topiramate have the same proportions of their babies born with cleft palates as patients not taking those drugs.  
+**15d.** Shoppers on average buy the same amounts of candy when Christmas music is playing in the shop compared to when the usual type of music is playing.  
+**15e.** Male white-collared manakins (a tropical bird) dance just as often when females are present as when they are absent.
+
+**21.** Imagine that two researchers independently carry out clinical trials to test the same null ypothesis, that COX-2 selective inhibitors (which are used to treat arthritis) have no effect on the risk of cardiac arrest. They use the same population for their study, but one experimenter uses a sample size of 60 participants, whereas the other uses a sample size of 100. Assume that all other aspects of the studies, including the significance levels, are the same between the two studies.  
+
+**21a.** The 60-participant study. Studies that have low probability of committing type II errors are said to have high power, and a study with a larger sample size tends to have higher power. Therefore the smaller sample size study is more likely to commit a type II error.  
+**21b.** The 100-participant study has a larger sample size, so it has higher power (since everything else is the same).  
+**21c.** They have the same significance level, therefore they have the same probability of committing a type I error.  
+**21d.** The test should be a two tailed test. The researchers are testing whether or not the selective inhibitor has an effect on the risk of cardiac arrest, not whether or not it has some directionality (ie reduces or increases the risk of cardiac arrest).
+
+**29.** A team of researchers conducted 100 independent hypothesis tests using a significance level of alpha = 0.05.  
+
+**29a.** 0.95.  
+**29b.** 5.
+
+**2) W&S Chapter 7 question 22 - use R to calculate a p-value (null hyp in part b)**  
+
+**22.** In a test of Murphy's law, pieces of toast were buttered on one side and then dropped. Murphy's law predicts that they will land butter-side down. Our of 9821 slices of toast dropped, 6101 landed butter-side down. 
+
+**22a.** 
+```{r = 2}
+# define the parameters given in the problem
+# prob is the probability of landing butter-side down
+prob <- 6101 / 9821
+# 95% confidence interval
+z95 <- 1.96
+# population size
+N <- 9821
+
+# calculate SE using the estimate of the proportion
+se_murphy <- sqrt((prob * (1 - prob)) / N)
+# calculate CI
+term2 <- z95 * se_murphy
+lowerlim <- prob - term2
+upperlim <- prob + term2
+lowerlim
+upperlim
+```
+The 95% confidence interval of the probability of the toast landing butter-side down is (0.612, 0.631).  
+**22b.**
+```{r = 2b}
+# calculate z
+z_murphy <- (0.5 - prob) / se_murphy
+# calculate p value
+p_murphy <- 2 * pnorm(abs(z_murphy), mean = 0, sd = 1, lower.tail = FALSE)
+p_murphy
+```
+
+The calculated p value is incredibly small, so it is not plausible that the toast has a 50:50 chance of landing butter side up or butter side down.  
+
+**3) From the Lab: Many SDs and Alphas**  
+Here’s the exercise we started in lab. Feel free to look back copiously at the lab handout if you’re getting stuck. Remember, for each step, write-out in comments what you want to do, and then follow behing with code.  
+Now, let’s assume an average population-wide resting heart rate of 80 beats per minute with a standard deviation of 6 BPM.  
+A given drug speeds people’s heart rates up on average by 5 BPM. What sample size do we need to achieve a power of 0.8?  
+
+**3.1) Start up your simulation.** Make a simulated data frame to look at the effects of multiple sample sizes: from 1-20, with 500 simulations per sample size, and also multiple SD values, from 3 through 10 (just 3:10, no need for non-integer values). You’re going to want crossing with your intitial data frame of just sample sizes and a vector of sd values to start. Then generate samples from the appropriate random normal distribution.  
+
+```{r = 3}
+library(tidyr)
+library(ggplot2)
+library(dplyr)
+
+# Input population data
+null_m <- 80 # null hyp, mean heart rate when not on the drug
+m <- 80 + 5 # m is what happens when you are on the drug
+sd_pop <- 6
+
+
+# Make a simulated data frame
+set.seed(42)
+samp_df <- data.frame(samp_size = rep(1:20, 500))
+# Make a SD vector
+sd <- 3:10
+# Use crossing
+sd_df <- samp_df %>%
+  crossing(sd = sd)
+
+# Generate sampled means from random normal distribution
+sim_df <- sd_df %>%
+  
+  # group by row, as each is one sim
+  group_by(sims = 1:n()) %>%
+  
+  # take a simulated from from our population
+  mutate(samp_mean = mean(rnorm(samp_size, m, sd))) %>%
+  
+  # clean up
+  ungroup()
+```
+
+**3.2) Z!** OK, now that you’ve done that, calculate the results from z-tests. Plot p by sample size, using facet_wrap for different SD values.
+```{r = 3.2}
+p_df <- sim_df %>%
+# calculate SE
+ mutate(se_y = sd_pop/sqrt(samp_size)) %>%
+# calculate Z
+  mutate(z = (samp_mean - null_m)/se_y) %>%
+# calculate p
+  mutate(p = 2*pnorm(abs(z), mean = 0, sd = 1, lower.tail = FALSE))
+# plot p by sample size
+ggplot(p_df, mapping = aes(x = samp_size, y = p)) +
+  geom_jitter() +
+  facet_wrap(~sd)
+```
+
+**3.3) P and Power**
+Now plot power for an alpha of 0.05, but use color for different SD values. Include our threshold power of 0.8.  
+```{r = 3.3}
+# calculate power
+power_df <- p_df %>%
+  #for each sample size
+  group_by(samp_size, sd) %>%
+  #calculate type II error rate for alpha of 0.05
+  summarise(error_rate = sum(p > 0.05)/n()) %>%
+  ungroup() %>%
+  #calculate power
+  mutate(power = 1 - error_rate)
+# plot 
+ggplot(power_df, mapping = aes(x = samp_size, y = power,
+                               color = factor(sd))) +
+  geom_jitter() +
+  geom_hline(yintercept = 0.8)
+  
+```
+
+If we assume the same standard deviation as that of the null hypothesis population (SD = 6), we need a sample size of around 12 to reach the threshold power 0.8.
+
+**3.4) Many alphas** 
+Last, use crossing again to explore changing alphas from 0.01 to 0.1. Plot power curves with different alphas as different colors, and use faceting to look at different SDs.
+```{r = 3.4}
+# define alpha
+alpha <- seq(0.01, 0.1, 0.01)
+alpha
+# cross
+alpha_df <- p_df %>%
+  crossing(alpha = alpha) %>%
+  # calculate type II error rate
+  group_by(samp_size, sd, alpha) %>%
+  summarise(error_rate = sum(p > alpha)/n()) %>%
+  # clean up data
+  ungroup() %>%
+  # calculate power
+  mutate(power = 1 - error_rate)
+
+# plot
+ggplot(alpha_df, mapping = aes(x = samp_size, y = power,
+                               color = factor(alpha))) +
+  geom_jitter() +
+  facet_wrap(~sd) +
+  geom_hline(yintercept = 0.8)
+```
+
+**3.5) What does it all mean? What do you learn about how alpha and SD affect power?**  
+
+Smaller standard deviations increase the power: we see that for a SD of 3, the power converges at 1 even at smaller sample sizes. For a standard deviation of 10, the power only reaches the threshold power of 0.8 at a sample size of 14 and larger. This makes sense because our effect size is 5, so it could be lost in the noise / natural variation in the samples with the larger standard deviations (ie >5).  
+
+Larger alphas also increase the power, whereas smaller alphas correlate to a lower power. This also makes sense, because there is a tradeoff between alpha and power. Increasing alpha increases the likelihood of rejecting the null hypothesis (whether or not it is correct), which decreases the likelihood of Type II errors (failing to reject a false null hypothesis), thereby increasing the power. The tradeoff is that this increases the likelihood of type I errors, i.e. rejecting a true null hypothesis.
+
+**3.6) How do you think that changing the effect size would affect power?** 
+You can just answer this without coding out anything. Based on what we’ve learned so far - what do you think?
+
+A greater effect size would increase power. Effect size is the difference between the hypothesized value in the null hypothesis and the true value of the parameter being tested. Power is the probability that a random sample will lead to rejection of a false null hypothesis.
+
+If the effect size is large, it is easier to detect in smaller sample sizes, and if the effect size is small a larger sample size is needed to account for natural variation in the population. Therefore if two studies with a larger and smaller effect size had the same sample size, the study with the larger effect size would have more power, because it would be less likely to commit a type II error (whereas the study with the smaller effect size might have too much noise to correctly reject the null hypothesis).
