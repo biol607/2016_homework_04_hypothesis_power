@@ -7,7 +7,7 @@ output: html_document
 
 ####Book Questions
 #####Chapter 6 
-1 - 
+
 15.
 a) Pygmy mammoths and continental mammoths have the same femur length.
 b) Patients taking phentermine and topiramate lose weight at the same rate as the control patients without the drugs.
@@ -19,7 +19,7 @@ e) Male white-collared manakins dance the same amount when a female is present o
 a) There will be a higher chance of getting a type-II error if your sample size is 60. The larger the sample size, the more power the study has. There is a higher chance of rejecting the null if there is greater power.
 b) The 100 participant study has a higher power. 
 c) Both of the tests have an equal probability of obtaining a type-I error. The only way to decrease the chance of a type-I error is to lower the alpha to something below 0.05. Doing so just increases your chance of getting a type-II error though. 
-d) I think that it should be a two-tailed test. You are testing whether COX-2 selective inhibitors have an effect on cardiac arrest or do not. 
+d) I think that it should be a one-tailed test. You are testing whether COX-2 selective inhibitors have an effect on cardiac arrest or do not. 
 
 29.
 a) The researchers would have a 95% chance that they would not reject any of the true null hypothesis. There is a 5% chance of creating a type-1 error and the result would be a false positive. 
@@ -33,7 +33,7 @@ library(binom)
 binom.confint(6101, 9821, conf.level = 0.95, methods = "exact")
 pbinom(6101, 9821, prob = 0.5, lower.tail = FALSE)
 ```
-b) The 95% confidence interval states that 95% of the time the mean will lie within 0.61 and 0.63 probabiities. It is plausable that the buttered toast will have a 50/50 chance, but it lies outside the confidence interval. 
+b) The 95% confidence interval states that 95% of the time the mean will lie within 0.61 and 0.63 probabiities. It is highly unlikely that the buttered toast will have a 50/50 chance, it lies outside the confidence interval. The p-value is insanely low. 
 
 
 ```{r, echo = TRUE}
