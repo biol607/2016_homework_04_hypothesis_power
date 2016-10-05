@@ -23,7 +23,10 @@ a. 0.95?
 b. 5
 
 2) W&S Chapter question 22 - use R to calculate a p-value
+```{r}
+pbinom(6101, size = 9821, prob = 0.5, lower.tail = FALSE)
 
+```
 
 3) From lab, many alphas, many sds
 ```{r}
