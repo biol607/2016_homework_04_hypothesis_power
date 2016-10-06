@@ -143,16 +143,16 @@ power_heart_df <- p_heart_df %>%
   #calculate power
   mutate(power = 1 - error_rate)
 
-#and plot. group and color by sd so that it is a more informative figure.
+#and plot. group and color by sd so that it is a more informative figure. make sd a factor so that each value gets 
+#a distinct value
 ggplot(data = power_heart_df, mapping = aes(x = samp_size, y = power, 
-                                            group = sd, color = sd)) +
+                                            group = sd, color = factor(sd))) +
   #points and lines together make visualizing a breeze
   geom_line() + geom_point() +
   #and set a horizontal line at our cutoff for power, which is 0.8
   geom_hline(yintercept = 0.8)
 
 ```
-
 
 ##3.4
 Now we want to look at how different alphas change this! We will look at 10 values for alpha, from 0.01 to 0.1
