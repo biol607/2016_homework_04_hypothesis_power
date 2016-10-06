@@ -100,7 +100,7 @@ Now plot power for an alpha of 0.05, but use color for different SD values. Incl
 ``` {r, echo = TRUE}
 power_df <- z_data %>%
   group_by(samp_size, sd_vector) %>%
-  summarize(error_rate = sum(p>0.08)/n()) %>%
+  summarize(error_rate = sum(p>0.05)/n()) %>%
   ungroup() %>%
   mutate(power = 1 - error_rate)
 
