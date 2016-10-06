@@ -30,10 +30,10 @@ output: html_document
 * The 100-participant study has higher power.
 
 ##### c. Which study has the higher probability of a Type I error?
-* These have the same probability of a Iype I error.
+* These have the same probability of a Type I error.
 
 ##### d. Should the tests be one-tailed or two-tailed? Explain.
-* The tests should be one-tailed test, because the purpose of COX-2 selective inhibitors are reducing the risk of cardiac arrest.
+* The tests should be one-tailed test, because the purpose of COX-2 selective inhibitors is reducing the risk of cardiac arrest.
 
 #### 29. A team of researchers conducted 100 independent hypothesis tests using a significance level of α = 0.05.
 ##### a. If all 100 null hypotheses were true, what is the probability that the researchers would reject none of them?
@@ -148,7 +148,7 @@ sd_sim_df <- sd_df %>%
 
 **OK, now that you’ve done that, calculate the results from z-tests. Plot p by sample size, using facet_wrap for different SD values.**
 
-```{r p values, cash = TRUE}
+```{r p values, cache = TRUE}
 # calculate p values
 p_val_df <- sd_sim_df %>%
   # calculate sample SE
@@ -169,7 +169,7 @@ ggplot(data = p_val_df, mapping = aes(x = samp_size, y = p)) +
 
 **Now plot power for an alpha of 0.05, but use color for different SD values. Include our threshold power of 0.8.**
 
-```{r power, cash = TRUE}
+```{r power, cache = TRUE}
 power_sd_df <- p_val_df %>%
   # for each sample size and each sd
   group_by(samp_size, sd_mul) %>%
@@ -192,7 +192,7 @@ ggplot(data = power_sd_df, mapping = aes(x = samp_size, y = power, color = facto
 
 **Last, use crossing again to explore changing alphas from 0.01 to 0.1. Plot power curves with different alphas as different colors, and use faceting to look at different SDs.**
 
-```{r alpha, cash = TRUE}
+```{r alpha, cache = TRUE}
 alpha <- seq(0.01, 0.1, .01)
 alpha_df <- p_val_df %>%
   # crossing alpha
@@ -214,7 +214,7 @@ ggplot(data = alpha_df, mapping = aes(x = samp_size, y = power, color = factor(a
 
 **3.5) What does it all mean? What do you learn about how alpha and SD affect power?**
 
-* The higher alpha means lesser power; higher SD means higher power.
+* Changing of alpha and SD will change the power. The higher alpha means lesser power; higher SD means higher power.
 
 **3.6) How do you think that changing the effect size would affect power?**
 
