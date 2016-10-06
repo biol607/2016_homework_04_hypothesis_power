@@ -1,0 +1,203 @@
+---
+title: "Homework_4"
+author: "Isaac Rosenthal"
+date: "October 3, 2016"
+output: html_document
+---
+
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+##1
+**15a.** Pygmy mammonths and continental mammoths do not differ in their mean femur lengths.  
+**15b.** Patients who take phentermine and topiramate lose weight at the same rate as control patients without these drugs.  
+**15c.** Patients who take phantermine and topimerate do not have different proportions of their babies born with cleft palates than do patients not taking these drugs.  
+**15d.** Shoppers on average buy the same amounts of candy when christmas music is playing in the shop compared to when the usual type of music is playing.  
+**15e.** Male white-collared manakins dance the same amount when females are present as when they are absent.  
+<br></br>  
+
+**21a.** the 60 participant study has a higher chance to commit type II error than the 100 participant study. Type II error is the failure to reject a false null hypothesis, and with a lower sample size it is easier to fail to detect any signficiant differences between control and experiemental results.  
+**21b.** The 100 participaly study has a higher power. Increasing sample size increases the power of a statistical test, and 100 is larger than 60.  
+**21c.** They would be the same. Type 1 error rate is determined by alpha, which is set a priori and is independant of sample size.  
+**21d.** This should be a two tailed test, as the researchers do not know if it is going to increase or decrease cardiac arrest risk. If the researchers knew that the only reasonable alternative hypothesis was that COX-2 selective inhibitors increase risk of cardiac arrest, then this should be a one tailed test. The same is true if the only reasonable alternative hypothesis was that the inhibitors reduced cardiac arrest. Because, as far as we know, both are equally likely, we need to investigate the likelyhood that these drugs either increase OR decrease risk of cardiac arrest.   
+<br></br>
+
+**29a.** If 100 null hypothesis were true, with an alpha of 0.05 the probablity that none would be rejected is 95%. alpha is the chance of committing a type 1 error, or rejecting a true null hypothesis. if there is a 5 % chance to reject a true, then conversely there is a 95% chance to not reject the null. Because these are independant nulls, this 95% can be applied to all of them.  
+**29b.** For the same reasoning as above, with an alpha of 0.05 I would expect 5% of them to be incorrectly rejected, so in this case five of the null hypotheses would be rejected. 
+<br></br>
+
+**22**
+
+R can easily calculate 95% confidence intervals with the `binom.test()` function
+```{r}
+#There were 9821 total drops, of which 6101 of them were butter side down. We also specify the confidence level, for a 95% CI we use 0.95
+binom.test(6101, 9821, conf.level=0.95)
+
+```
+This tells us that the proportion of butter side down/total drops is .6212, with a 95% CI around this proportion of  .6115 to .6308. Therefore, the probability of landing butter side down was 62.12%, with a 95% CI of 61.16% to 63.08%.
+
+This alone tells us that it is unlikely that the true probabilty of landing butter side down is 50%, because we are 95% confident that the true probabiltiy is between 61.16% and 63.08%. We can also use R to calculate the p value for the upper tail of this distribution. We want the upper tail because we want to know the probability of getting this many butter side downs or higher.
+```{r}
+# null expectation is 50% butter up and 50% butter down
+# 9821 slices dropped
+#6101 butter side up
+
+#p value for the upper tail. we want the upper tail because we want to know the probability of getting this many butter side downs or higher
+pbinom(6101, size = 9821, prob = 0.5, lower.tail = FALSE)
+```
+
+This gives us the tiny numer of  3.207137e-129, meaning that the likelyhood of observing this result and the null hypothesis being true is 3.207137e-127%. Which is really small. It seems like this toast is cursed, because it is extremely unlikely that we would see this distribution of results if the true probability was really 50:50.
+
+##3.0
+First, we need to set up a dataframe to use in our simulations.
+
+```{r}
+#we want 500 simulations for each sample size from 1 to 20.
+heart_df <- data.frame(samp_size = rep(1:20, 500))
+```
+We also want to test across a range of standard deviations, from 3 to 10. First we need to make a new vector containing the standard deviations we want to test.
+```{r}
+sd <- c(3:10)
+```
+
+Then, using the `crossing` function we can cross each level of `sd` with each sample size within `heart_df`.
+
+```{r}
+heart_df <- heart_df %>%
+  crossing(sd = sd)
+```
+
+##3.1
+Now, we can run the simulations! We will use a normal distribution for this excersize. Before we run the simulation, we need to set up some information ahead of time that will be fed to the simulations.
+
+```{r}
+#we have to tell it the resting heart rate of the average population, pretreatment.
+null_m <- 80
+#we also have to tell it what the effect size is, aka what the average change caused by the drug should be.
+m <- null_m + 5
+#by setting these up as separate objects, it is easy to adjust them and play with the simulation.
+
+```
+
+```{r}
+#make a new data frame
+sim_heart_df <- heart_df %>%
+  #group by row, because each row is one simulation. By being sneaky we can do this without creating a new column ahead of time. This makes each row from 1 to the length of heart_df a separate simulation.
+  group_by(sims = 1:n()) %>%
+  #create a new column and populate it with the mean of each simulated sample.
+  mutate(samp_mean = mean(rnorm(samp_size, m, sd))) 
+```
+
+Do a quick plot to see how it looks
+```{r, cache = TRUE}
+ggplot(data = sim_heart_df, 
+       mapping = aes(x=samp_size, y = samp_mean)) +
+  geom_jitter(alpha = 0.4, size=3)
+```
+
+##3.2
+Nice, it looks good - the variability in the mean decreases as sample size increases, centered slightly above 80. Now that I feel confident in my simulation, time to do some statistics. We can use R to calculate a SE, Z score, and p value.
+```{r, cache = TRUE}
+p_heart_df <- sim_heart_df %>%
+  #We have to work up to a p value. first, we need the SE
+  mutate(se = sd/sqrt(samp_size)) %>%
+  
+  #then, we can get z by comparing sample means to the null mean
+  mutate(z = (samp_mean - null_m)/se) %>%
+  
+  #and for the grand finale, we can now calculate p.
+  #we want lower.tail = FALSE because we expect this drug to increase heartrate, meaning there will be a change on the upper tail of the data.
+  mutate(p = pnorm(abs(z), lower.tail=FALSE))
+```
+
+Now we can plot these p values!
+
+```{r, cache = TRUE}
+#make a plot of sample size by p
+ggplot(p_heart_df, mapping = aes(x=samp_size, y = p)) +
+  geom_jitter(alpha=0.4) +
+  #create a facet for each standard deviation.
+  facet_wrap(~sd)
+```
+
+##3.3
+
+Ok, now time to calculate the power of these simulations.
+
+```{r, cache = TRUE}
+#make a new data frame
+power_heart_df <- p_heart_df %>%
+  
+  #for each sample size and standard deviation
+  group_by(samp_size, sd) %>%
+  
+  #calculate the type 2 error rate for an alpha of 0.05
+  summarise(error_rate = sum(p>0.05)/n()) %>%
+  #cleanup
+  ungroup() %>%
+  
+  #calculate power
+  mutate(power = 1 - error_rate)
+
+#and plot. group and color by sd so that it is a more informative figure. make sd a factor so that each value gets 
+#a distinct value
+ggplot(data = power_heart_df, mapping = aes(x = samp_size, y = power, 
+                                            group = sd, color = factor(sd))) +
+  #points and lines together make visualizing a breeze
+  geom_line() + geom_point() +
+  #and set a horizontal line at our cutoff for power, which is 0.8
+  geom_hline(yintercept = 0.8)
+
+```
+
+##3.4
+Now we want to look at how different alphas change this! We will look at 10 values for alpha, from 0.01 to 0.1
+```{r}
+#create a vector containing all of our values for alpha
+alpha <- seq(0.01, 0.1, by = 0.01)
+```
+
+Now, we will cross these with the `p_heart_df`, because we want to then compare power across many alphas
+```{r}
+alpha_heart_df <- p_heart_df %>%
+  #cross our p value dataframe with our vector of alphas.
+  crossing(alpha) %>%
+  #group it by sample size, alpha, and std. deviation because we will be using all of these in our figure
+  group_by(samp_size, alpha, sd) %>%
+#and now summarise
+  summarise(error_rate = sum(p>alpha)/n()) %>%
+  
+  ungroup() %>%
+  
+  #calculate power
+  mutate(power = 1 - error_rate)
+
+#and plot
+#use factor(alpha) so that each value is taken as a discrete factor and given a color
+ggplot(data = alpha_heart_df, mapping = aes(x = samp_size, y = power, 
+                                            group = alpha, color = factor(alpha))) +
+  geom_line() + geom_point() +
+  #facet by standard deviation
+  facet_wrap(~sd) +
+  #set line at our desired power level of 0.8
+  geom_hline(yintercept = 0.8)
+
+```
+
+##3.5 What does it all mean?
+
+I learned several things about how sample size, alpha and SD can affect power. 
+Increasing sample size appears to increase the power of our analyses - except in cases with very low standard deviations, we don't hit our target power of 0.8 until our sample size is 5+.
+
+alpha is the probability that we will reject a null hypothesis. by increasing alpha, we increase our chance to reject the Ho, meaning we also increase the power of our test. We have to to be cautious here, because increasing alpha also increases the chance that we will commit a type 1 error and reject a null that we shouldn't.
+
+SD also affects power because samples that have a high sd have a lower power. Essentially, it is harder to detect a significant departure from the mean if there is a lot of noise in the sample. By reducing the sd of the samples, we increase the power of our tests. In this example, at the highest standard deviation of 10, we never reach our desired power threshold of 0.8 - we would have to increase sample size or alpha to compensate for this. Increasing sample size is probably the safest way to continue because if we play with alpha too much we are at risk of committing a type 1 error.
+
+##3.6
+
+I think that changing effect size will also increase the power of our tests. By increasing the effect size, we would expect a greater departure from the null mean, making the effects easier to detect. This increase in abiltity to detect a change means that we are also going to increase the probablitity to reject the null hypothesis. In less quantitative terms, this is intuitive; dramatic differences are probably easier to detect than subtle ones.
+
